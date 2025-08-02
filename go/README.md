@@ -14,7 +14,7 @@
 ## 📦 安装
 
 ```bash
-go get github.com/canyon-project/go-istanbul-sourcemap
+go get github.com/canyon-project/istanbul-source-maps/go
 ```
 
 ## 🚀 快速开始
@@ -28,7 +28,7 @@ import (
     "fmt"
     "log"
     
-    istanbul "github.com/canyon-project/go-istanbul-sourcemap"
+    istanbul "github.com/canyon-project/istanbul-source-maps/go"
 )
 
 func main() {
@@ -75,7 +75,7 @@ import (
     "fmt"
     "log"
     
-    istanbul "github.com/canyon-project/go-istanbul-sourcemap"
+    istanbul "github.com/canyon-project/istanbul-source-maps/go"
 )
 
 func main() {
@@ -162,17 +162,17 @@ type Position struct {
 
 ```bash
 # 克隆仓库
-git clone https://github.com/canyon-project/go-istanbul-sourcemap.git
-cd go-istanbul-sourcemap
+git clone https://github.com/canyon-project/istanbul-source-maps.git
+cd istanbul-source-maps
 
 # 运行示例
-go run example/main.go
+go run go/example/main.go
 
 # 运行测试
-go test -v
+cd go && go test -v
 
 # 运行基准测试
-go test -bench=.
+cd go && go test -bench=.
 ```
 
 ## 🔧 高级用法
@@ -183,7 +183,7 @@ go test -bench=.
 package main
 
 import (
-    istanbul "github.com/canyon-project/go-istanbul-sourcemap"
+    istanbul "github.com/canyon-project/istanbul-source-maps/go"
 )
 
 func main() {
@@ -287,11 +287,11 @@ fmt.Printf("转换后: %d 个文件\n", len(transformedCoverage))
 
 ```bash
 # 克隆仓库
-git clone https://github.com/canyon-project/go-istanbul-sourcemap.git
-cd go-istanbul-sourcemap
+git clone https://github.com/canyon-project/istanbul-source-maps.git
+cd istanbul-source-maps
 
 # 安装依赖
-go mod tidy
+cd go && go mod tidy
 
 # 运行测试
 go test -v

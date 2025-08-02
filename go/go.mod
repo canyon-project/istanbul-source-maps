@@ -1,4 +1,4 @@
-module github.com/canyon-project/go-istanbul-sourcemap
+module github.com/canyon-project/istanbul-source-maps/go
 
 go 1.22
 

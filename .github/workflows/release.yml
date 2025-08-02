@@ -114,7 +114,7 @@ jobs:
           echo "### 📦 Installation" >> CHANGELOG.md
           echo "" >> CHANGELOG.md
           echo '```bash' >> CHANGELOG.md
-          echo "go get github.com/canyon-project/go-istanbul-sourcemap@$VERSION" >> CHANGELOG.md
+          echo "go get github.com/canyon-project/istanbul-source-maps/go@$VERSION" >> CHANGELOG.md
           echo '```' >> CHANGELOG.md
 
       - name: Create GitHub Release
@@ -132,8 +132,8 @@ jobs:
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           # 触发 Go proxy 更新
-          curl -f "https://proxy.golang.org/github.com/canyon-project/go-istanbul-sourcemap/@v/$VERSION.info" || true
-          curl -f "https://sum.golang.org/lookup/github.com/canyon-project/go-istanbul-sourcemap@$VERSION" || true
+          curl -f "https://proxy.golang.org/github.com/canyon-project/istanbul-source-maps/go/@v/$VERSION.info" || true
+          curl -f "https://sum.golang.org/lookup/github.com/canyon-project/istanbul-source-maps/go@$VERSION" || true
 
   verify-release:
     needs: release
@@ -159,7 +159,7 @@ jobs:
           
           # 尝试安装包
           for i in {1..5}; do
-            if go get github.com/canyon-project/go-istanbul-sourcemap@$VERSION; then
+            if go get github.com/canyon-project/istanbul-source-maps/go@$VERSION; then
               echo "✅ Package successfully available at version $VERSION"
               break
             else
@@ -174,7 +174,7 @@ jobs:
           
           import (
               "fmt"
-              istanbul "github.com/canyon-project/go-istanbul-sourcemap"
+              istanbul "github.com/canyon-project/istanbul-source-maps/go"
           )
           
           func main() {

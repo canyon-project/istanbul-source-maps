@@ -11,7 +11,7 @@
 ### Go 版本
 
 ```bash
-go get github.com/canyon-project/go-istanbul-sourcemap
+go get github.com/canyon-project/istanbul-source-maps/go
 ```
 
 ## 🚀 快速开始
@@ -25,7 +25,7 @@ import (
     "fmt"
     "log"
     
-    istanbul "github.com/canyon-project/go-istanbul-sourcemap"
+    istanbul "github.com/canyon-project/istanbul-source-maps/go"
 )
 
 func main() {
