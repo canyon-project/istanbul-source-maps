@@ -89,7 +89,7 @@ jobs:
       - name: Create Go proxy cache
         working-directory: ./go
         run: |
-          GOPROXY=direct go list -m github.com/canyon-project/go-istanbul-sourcemap@${{ steps.version.outputs.version }} || true
+          GOPROXY=direct go list -m github.com/canyon-project/istanbul-source-maps/go@${{ steps.version.outputs.version }} || true
 
       - name: Generate changelog
         id: changelog

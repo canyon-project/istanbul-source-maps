@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	istanbul "github.com/canyon-project/go-istanbul-sourcemap"
+	istanbul "github.com/canyon-project/istanbul-source-maps/go"
 )
 
 func main() {

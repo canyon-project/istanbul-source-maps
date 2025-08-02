@@ -1,6 +1,6 @@
 # 发布指南
 
-本文档说明如何发布 `go-istanbul-sourcemap` Go 包。
+本文档说明如何发布 `istanbul-source-maps` Go 包。
 
 ## 🚀 自动发布流程
 
