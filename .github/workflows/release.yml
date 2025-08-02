@@ -1,0 +1,186 @@
+name: Release Go Package
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., v1.0.0)'
+        required: true
+        type: string
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.22'
+
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('go/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Download dependencies
+        working-directory: ./go
+        run: go mod download
+
+      - name: Run tests
+        working-directory: ./go
+        run: go test -v ./...
+
+      - name: Run benchmarks
+        working-directory: ./go
+        run: go test -bench=. -benchmem ./...
+
+  release:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.22'
+
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Validate version format
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          if [[ ! $VERSION =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?$ ]]; then
+            echo "Invalid version format: $VERSION"
+            echo "Expected format: v1.0.0 or v1.0.0-beta"
+            exit 1
+          fi
+
+      - name: Build and test
+        working-directory: ./go
+        run: |
+          go mod tidy
+          go test -v ./...
+          go build ./...
+
+      - name: Create Go proxy cache
+        working-directory: ./go
+        run: |
+          GOPROXY=direct go list -m github.com/canyon-project/go-istanbul-sourcemap@${{ steps.version.outputs.version }} || true
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          
+          echo "## 🚀 Release $VERSION" > CHANGELOG.md
+          echo "" >> CHANGELOG.md
+          
+          if [ -n "$PREV_TAG" ]; then
+            echo "### 📝 Changes since $PREV_TAG" >> CHANGELOG.md
+            echo "" >> CHANGELOG.md
+            git log --pretty=format:"- %s (%h)" $PREV_TAG..HEAD >> CHANGELOG.md
+          else
+            echo "### 📝 Initial Release" >> CHANGELOG.md
+            echo "" >> CHANGELOG.md
+            echo "- Initial release of Go Istanbul Sourcemap package" >> CHANGELOG.md
+          fi
+          
+          echo "" >> CHANGELOG.md
+          echo "### 📦 Installation" >> CHANGELOG.md
+          echo "" >> CHANGELOG.md
+          echo '```bash' >> CHANGELOG.md
+          echo "go get github.com/canyon-project/go-istanbul-sourcemap@$VERSION" >> CHANGELOG.md
+          echo '```' >> CHANGELOG.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: Release ${{ steps.version.outputs.version }}
+          body_path: CHANGELOG.md
+          draft: false
+          prerelease: ${{ contains(steps.version.outputs.version, '-') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Trigger Go proxy update
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          # 触发 Go proxy 更新
+          curl -f "https://proxy.golang.org/github.com/canyon-project/go-istanbul-sourcemap/@v/$VERSION.info" || true
+          curl -f "https://sum.golang.org/lookup/github.com/canyon-project/go-istanbul-sourcemap@$VERSION" || true
+
+  verify-release:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.22'
+
+      - name: Wait for Go proxy
+        run: sleep 30
+
+      - name: Verify package availability
+        run: |
+          VERSION="${{ needs.release.outputs.version || github.ref_name }}"
+          echo "Verifying package availability for version: $VERSION"
+          
+          # 创建临时目录测试安装
+          mkdir -p /tmp/test-install
+          cd /tmp/test-install
+          go mod init test
+          
+          # 尝试安装包
+          for i in {1..5}; do
+            if go get github.com/canyon-project/go-istanbul-sourcemap@$VERSION; then
+              echo "✅ Package successfully available at version $VERSION"
+              break
+            else
+              echo "⏳ Attempt $i failed, waiting 30s..."
+              sleep 30
+            fi
+          done
+          
+          # 验证可以导入
+          cat > main.go << 'EOF'
+          package main
+          
+          import (
+              "fmt"
+              istanbul "github.com/canyon-project/go-istanbul-sourcemap"
+          )
+          
+          func main() {
+              ist := istanbul.New()
+              fmt.Printf("Istanbul package loaded successfully, version: %s\n", ist.GetVersion())
+          }
+          EOF
+          
+          go run main.go
